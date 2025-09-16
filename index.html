@@ -44,12 +44,24 @@
   }
 
   h1 {
-    font-weight: 700;
-    font-size: 40px;
-    color: var(--text);
-    margin: 16px 0 28px;
-    letter-spacing: -1.5px;
+  position: relative;       /* allows absolute positioning inside */
+  display: inline-block;    /* keep the heading box tight to its content */
+  font-weight: 700;
+  font-size: 40px;
+  color: var(--text);
+  margin: 16px 0 28px;
+  letter-spacing: -1.5px;
   }
+
+.lightning {
+  position: absolute;
+  top: 50%;                 /* vertically center the GIF */
+  transform: translateY(-50%);
+  right: -40px;             /* push it to the right of the text */
+  width: 28px;              /* scale the 320px GIF down to about 28px wide */
+  height: auto;             /* keep aspect ratio */
+  }
+
 
   a {
   color: var(--link);
@@ -94,7 +106,10 @@
     <a href="https://youtu.be/EqHf7UWo3fQ?si=ZM1JGZ1Ogpv8Mmht" target="_blank" rel="noopener">what i like</a>
   </nav>
 
-  <h1>hi my name is thanh.</h1>
+  <h1>
+  hi my name is thanh.
+  <img src="lightning.gif" alt="lightning" class="lightning">
+  </h1>
 
   <p>this site exists because i love experimenting.</p>
 
