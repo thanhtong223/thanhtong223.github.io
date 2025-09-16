@@ -20,12 +20,12 @@
 
   body {
     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    font-weight: 500;             /* Inter Medium for body */
-    font-size: 20px;              /* larger base size */
+    font-weight: 500;
+    font-size: 20px;              /* base size */
     line-height: 1.9;
     color: var(--muted);
-    margin: 60px 0 80px 80px;     /* space from top/bottom & pushed to left */
-    max-width: 540px;             /* keeps text in a comfortable reading width */
+    margin: 60px 0 80px 80px;     /* desktop spacing: top right bottom left */
+    max-width: 540px;
     text-align: left;
     letter-spacing: -0.8px;
   }
@@ -44,7 +44,7 @@
   }
 
   h1 {
-    font-weight: 700;             /* Inter Bold for heading */
+    font-weight: 700;
     font-size: 40px;
     color: var(--text);
     margin: 16px 0 28px;
@@ -68,6 +68,18 @@
 
   .ps {
     margin-top: 24px;
+  }
+
+  /* -------- Mobile layout fix -------- */
+  @media (max-width: 768px) {
+    body {
+      margin: 40px 20px 60px 20px; /* reduce left & right margin on phones */
+      max-width: 100%;            /* let text fill more of the small screen */
+      font-size: 18px;            /* optional: slightly smaller base font for better fit */
+    }
+    h1 {
+      font-size: 32px;            /* scale down heading to match new base size */
+    }
   }
 </style>
 </head>
