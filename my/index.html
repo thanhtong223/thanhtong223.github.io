@@ -17,10 +17,6 @@
     --muted: #4b4b4b;
     --link: #1a73e8;
     --accent: #c23b22;
-
-    /* 👇 ADJUST THESE TWO VALUES TO CHANGE PHOTO STACK SIZE */
-    --photo-width: 45%;       /* width of each photo (e.g. 35% smaller / 55% bigger) */
-    --photo-stack-height: 380px; /* total height of the stack (increase if photos overlap text) */
   }
 
   body {
@@ -68,11 +64,11 @@
     border-radius: 8px;
   }
 
-  /* Keep GIF at its natural 1280×720 size but responsive */
+  /* Keep GIF at natural 1280×720 but responsive */
   .alps-gif {
-    width: 1280px;
+    width: 1280px;   /* natural width */
     height: auto;
-    max-width: 100%;
+    max-width: 100%; /* shrink if column/screen is smaller */
     display: block;
     margin: 24px 0;
   }
@@ -82,29 +78,32 @@
     position: relative;
     width: 100%;
     max-width: 540px;
-    height: var(--photo-stack-height); /* uses the adjustable variable */
+    height: 400px;   /* adjust total stack height as needed */
     margin: 24px 0;
   }
 
   .photo-stack .photo {
     position: absolute;
-    width: var(--photo-width);   /* uses the adjustable variable */
     border-radius: 8px;
     object-fit: cover;
   }
 
+  /* individual size + placement */
   .photo.left {
+    width: 40%;  /* size of left photo */
     left: 0;
     top: 60px;
     z-index: 1;
   }
   .photo.center {
+    width: 50%;  /* size of center photo */
     left: 50%;
     top: 10px;
     transform: translateX(-50%);
-    z-index: 2;
+    z-index: -1;
   }
   .photo.right {
+    width: 35%;  /* size of right photo */
     right: 0;
     top: 60px;
     z-index: 1;
@@ -126,7 +125,7 @@
     }
     .photo-stack .photo {
       position: static;
-      width: 100%;
+      width: 100%; /* each fills the width on mobile */
       transform: none;
     }
     .alps-gif {
