@@ -17,6 +17,10 @@
     --muted: #4b4b4b;
     --link: #1a73e8;
     --accent: #c23b22;
+
+    /* 👇 ADJUST THESE TWO VALUES TO CHANGE PHOTO STACK SIZE */
+    --photo-width: 45%;       /* width of each photo (e.g. 35% smaller / 55% bigger) */
+    --photo-stack-height: 380px; /* total height of the stack (increase if photos overlap text) */
   }
 
   body {
@@ -64,11 +68,11 @@
     border-radius: 8px;
   }
 
-  /* keep the GIF at natural size but still responsive */
+  /* Keep GIF at its natural 1280×720 size but responsive */
   .alps-gif {
-    width: 720px;    /* set to the natural width of your GIF */
-    height: auto;    /* maintain the natural aspect ratio */
-    max-width: 100%; /* shrink only if screen is smaller */
+    width: 1280px;
+    height: auto;
+    max-width: 100%;
     display: block;
     margin: 24px 0;
   }
@@ -78,13 +82,13 @@
     position: relative;
     width: 100%;
     max-width: 540px;
-    height: 380px;       /* more vertical space so text doesn't overlap */
+    height: var(--photo-stack-height); /* uses the adjustable variable */
     margin: 24px 0;
   }
 
   .photo-stack .photo {
     position: absolute;
-    width: 45%;
+    width: var(--photo-width);   /* uses the adjustable variable */
     border-radius: 8px;
     object-fit: cover;
   }
@@ -126,7 +130,7 @@
       transform: none;
     }
     .alps-gif {
-      width: 100%; /* fill column on small screens */
+      width: 100%;
     }
   }
 </style>
