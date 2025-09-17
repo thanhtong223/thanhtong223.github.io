@@ -45,6 +45,21 @@
   nav a:hover {
     text-decoration: underline;
   }
+  nav {
+  margin-bottom: 28px;
+  display: flex;           /* put all links in a single row */
+  flex-wrap: nowrap;       /* prevent wrapping */
+  overflow-x: auto;        /* scroll horizontally if needed */
+  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+}
+nav a {
+  margin-right: 16px;
+  color: var(--link);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;     /* keep each link on one line */
+}
+
 
   h1 {
   position: relative;       /* allows absolute positioning inside */
