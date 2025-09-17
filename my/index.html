@@ -16,7 +16,7 @@
     --text: #121212;
     --muted: #4b4b4b;
     --link: #1a73e8;
-    --accent: #c23b22; /* match nav color for 'for my gf' */
+    --accent: #c23b22;
   }
 
   body {
@@ -26,7 +26,7 @@
     line-height: 1.9;
     color: var(--muted);
     letter-spacing: -0.5px;
-    margin: 60px 0 80px 80px;  /* top right bottom left */
+    margin: 60px 0 80px 80px;
     max-width: 540px;
     text-align: left;
   }
@@ -63,63 +63,56 @@
     display: block;
     border-radius: 8px;
   }
-.alps-gif {
-  width: auto;      /* keep original width */
-  height: auto;     /* keep original height */
-  max-width: 100%;  /* shrink if screen/column is smaller */
-}
- /* --- three-photo stack --- */
-.photo-stack{
-  position: relative;
-  width: 100%;
-  max-width: 540px;
-  height: 380px;        /* more vertical space so text doesn't overlap */
-  margin: 24px 0;
-}
 
-.photo-stack .photo{
-  position: absolute;
-  width: 45%;           /* keep responsive size */
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.photo.left{
-  left: 0;
-  top: 60px;
-  z-index: 1;
-}
-.photo.center{
-  left: 50%;
-  top: 10px;
-  transform: translateX(-50%);
-  z-index: 2;
-}
-.photo.right{
-  right: 0;
-  top: 60px;
-  z-index: 1;
-}
-
-/* Mobile: stack vertically */
-@media (max-width: 768px){
-  .photo-stack{
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  /* keep the GIF at natural size but still responsive */
+  .alps-gif {
+    width: 720px;    /* set to the natural width of your GIF */
+    height: auto;    /* maintain the natural aspect ratio */
+    max-width: 100%; /* shrink only if screen is smaller */
+    display: block;
+    margin: 24px 0;
   }
-  .photo-stack .photo{
-    position: static;
+
+  /* --- three-photo stack --- */
+  .photo-stack {
+    position: relative;
     width: 100%;
-    transform: none;
+    max-width: 540px;
+    height: 380px;       /* more vertical space so text doesn't overlap */
+    margin: 24px 0;
   }
-}
 
+  .photo-stack .photo {
+    position: absolute;
+    width: 45%;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .photo.left {
+    left: 0;
+    top: 60px;
+    z-index: 1;
+  }
+  .photo.center {
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+  .photo.right {
+    right: 0;
+    top: 60px;
+    z-index: 1;
+  }
 
   /* Mobile adjustments */
   @media (max-width: 768px) {
-    body { margin: 40px 20px 60px 20px; max-width: 100%; font-size: 18px; }
+    body {
+      margin: 40px 20px 60px 20px;
+      max-width: 100%;
+      font-size: 18px;
+    }
     h1 { font-size: 32px; }
     .photo-stack {
       height: auto;
@@ -132,12 +125,14 @@
       width: 100%;
       transform: none;
     }
+    .alps-gif {
+      width: 100%; /* fill column on small screens */
+    }
   }
 </style>
 </head>
 <body>
 
-  <!-- Navigation (same style as main page) -->
   <nav>
     <a href="/">home</a>
     <a href="https://youtube.com/@vthanht" target="_blank" rel="noopener">my yt channel</a>
