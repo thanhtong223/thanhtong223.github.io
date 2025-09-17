@@ -64,23 +64,54 @@
     border-radius: 8px;
   }
 
-  /* Overlapping three-photo section */
-  .photo-stack {
-    position: relative;
+ /* --- three-photo stack --- */
+.photo-stack{
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  height: 380px;        /* more vertical space so text doesn't overlap */
+  margin: 24px 0;
+}
+
+.photo-stack .photo{
+  position: absolute;
+  width: 45%;           /* keep responsive size */
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.photo.left{
+  left: 0;
+  top: 60px;
+  z-index: 1;
+}
+.photo.center{
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.photo.right{
+  right: 0;
+  top: 60px;
+  z-index: 1;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 768px){
+  .photo-stack{
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .photo-stack .photo{
+    position: static;
     width: 100%;
-    max-width: 540px;
-    height: 260px;     /* adjust to fit */
-    margin: 24px 0;
+    transform: none;
   }
-  .photo-stack .photo {
-    position: absolute;
-    width: 45%;
-    border-radius: 8px;
-    object-fit: cover;
-  }
-  .photo.left   { left: 0;   top: 30px; z-index: 1; }
-  .photo.center { left: 50%; top: 0;    transform: translateX(-50%); z-index: 2; }
-  .photo.right  { right: 0;  top: 30px; z-index: 1; }
+}
+
 
   /* Mobile adjustments */
   @media (max-width: 768px) {
