@@ -42,6 +42,17 @@
   }
   nav a:hover { text-decoration: underline; }
   nav a.gf-link { color: var(--accent); }
+  nav {
+  margin-bottom: 28px;
+  display: flex;         /* arrange links in one row */
+  flex-wrap: nowrap;     /* prevent wrapping to next line */
+  overflow-x: auto;      /* allow horizontal scroll if it can't fit */
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+}
+nav a {
+  white-space: nowrap;   /* prevent individual links from breaking */
+}
+
 
   h1 {
     font-weight: 700;
