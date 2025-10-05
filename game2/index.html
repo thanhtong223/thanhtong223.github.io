@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flappy Spaceship</title>
+  <style>
+    :root{
+      --bg:#060912; --bg2:#0a0f1f; --hud:#0f162d; --text:#e6edf6; --muted:#9fb0c8; --accent:#6ec6ff; --good:#7dffb0; --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; color:var(--text); background: radial-gradient(1200px 800px at 50% -10%, var(--bg2) 0%, var(--bg) 60%, #050814 100%);}
+    .wrap{max-width:960px; margin-inline:auto; padding:16px}
+
+    .panel{background:linear-gradient(180deg,#0d1329 0%, #090e20 100%); border:1px solid #233463aa; border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.44), inset 0 1px 0 rgba(255,255,255,.05); overflow:hidden; position:relative}
+    .hud{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border-bottom:1px solid #1a294f}
+    .hud-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+    .btn{appearance:none; border:1px solid #2a3d72; background:#15214a; color:var(--text); padding:8px 12px; border-radius:12px; cursor:pointer; font-weight:600; letter-spacing:.2px}
+    .btn:hover{background:#182754}
+    .tag{font-size:12px; opacity:.85; padding:2px 8px; border-radius:999px; background:#14214a; border:1px solid #26376e}
+
+    #game{display:block; width:100%; height:auto; background:linear-gradient(180deg,#060914 0%, #090f20 100%)}
+
+    .footer{display:grid; gap:6px; padding:10px 14px; border-top:1px solid #1a294f; color:#cbd5e1; font-size:13px}
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:#0f162f; border:1px solid #233463; padding:2px 6px; border-radius:6px}
+
+    .home{position:absolute; top:10px; left:10px; z-index:5}
+    .mute{position:absolute; top:10px; right:10px; z-index:5}
+
+    .toast{position:fixed; top:14px; right:14px; background:#0f1735; border:1px solid #253a72; padding:10px 12px; border-radius:10px; font-size:13px; opacity:0; transform:translateY(-10px); transition:opacity .25s, transform .25s}
+    .toast.show{opacity:1; transform:translateY(0)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel">
+      <div class="hud">
+        <div class="hud-row">
+          <a class="btn" href="/" title="Back to home">🏠 Home</a>
+          <span class="tag">HTML • Canvas • Mobile friendly</span>
+        </div>
+        <div class="hud-row">
+          <button id="start" class="btn">Start</button>
+          <button id="pause" class="btn">Pause</button>
+          <button id="restart" class="btn">Restart</button>
+        </div>
+        <div class="hud-row">
+          <div>Score: <strong id="score">0</strong></div>
+          <div>Best: <strong id="best">0</strong></div>
+        </div>
+      </div>
+
+      <button id="muteBtn" class="btn mute" title="Toggle sound">🔈</button>
+      <a class="btn home" href="/" title="Back to home">⟵</a>
+
+      <canvas id="game" width="960" height="540" aria-label="Flappy Spaceship canvas" role="img"></canvas>
+
+      <div class="footer">
+        <div><strong>Controls:</strong> Click / Tap to boost • Space / W / ↑ to boost • P to pause</div>
+        <div><strong>Goal:</strong> Fly the spaceship through asteroid gaps as long as you can.</div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast">Saved!</div>
+
+  <script>
+    // ===== Canvas & HiDPI =====
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    function fitHiDPI(){
+      const ratio = Math.min(window.devicePixelRatio||1, 2);
+      const cssW = canvas.clientWidth; const cssH = Math.round(cssW * (540/960));
+      canvas.style.height = cssH + 'px';
+      canvas.width = Math.round(cssW * ratio);
+      canvas.height = Math.round(cssH * ratio);
+      return ratio;
+    }
+    let DPR = fitHiDPI();
+    addEventListener('resize', ()=>{DPR = fitHiDPI();});
+
+    // ===== Game State =====
+    const state = {
+      running:false, over:false, last:0, t:0,
+      score:0, best:Number(localStorage.getItem('flappy_ship_best')||0),
+      muted: JSON.parse(localStorage.getItem('flappy_ship_muted')||'false'),
+      ship:{x:0,y:0,r:14,vy:0,boost:-290,grav:480,rot:0},
+      pipes:[], spawn:0, gap:150, speed:140,
+      stars:[],
+    };
+    document.getElementById('best').textContent = state.best;
+
+    // ===== Audio (WebAudio beeps, no assets) =====
+    const AudioSys = (()=>{
+      const C = {ctx:null, muted:state.muted};
+      function ensure(){ if(C.ctx) return; C.ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+      function beep({freq=800, dur=0.08, type='square', vol=0.04}){
+        if(C.muted) return; ensure(); const t = C.ctx.currentTime; const o = C.ctx.createOscillator(); const g = C.ctx.createGain();
+        o.type = type; o.frequency.value = freq; g.gain.value = vol; o.connect(g); g.connect(C.ctx.destination); o.start(t); o.stop(t+dur);
+      }
+      return {beep, setMuted(m){C.muted=m;}, ctx:()=>C.ctx};
+    })();
+
+    // ===== Utility =====
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const rand=(a,b)=>Math.random()*(b-a)+a;
+
+    // ===== Stars background =====
+    function initStars(){ state.stars.length=0; const n = Math.round((canvas.width*canvas.height)/(11000));
+      for(let i=0;i<n;i++){ state.stars.push({x:rand(0,canvas.width), y:rand(0,canvas.height), z:rand(0.4,1.2)}); }
+    }
+
+    // ===== Pipes (asteroid belts) =====
+    function reset(){
+      state.over=false; state.t=0; state.score=0; state.pipes.length=0; state.spawn=0; state.speed=140; state.gap=160*DPR;
+      state.ship.x = canvas.width*0.28; state.ship.y = canvas.height*0.5; state.ship.vy=0; state.ship.rot=0;
+      initStars();
+    }
+
+    function spawnPipe(){
+      const minGap = 130*DPR, maxGap = 190*DPR; const g = clamp(state.gap + rand(-16*DPR,16*DPR), minGap, maxGap);
+      const topH = rand(40*DPR, canvas.height - g - 40*DPR);
+      const w = 70*DPR; const x = canvas.width + w;
+      state.pipes.push({x, w, top:topH, gap:g, scored:false});
+    }
+
+    // ===== Input =====
+    const inputs = {down:false};
+    function boost(){ if(state.over) return; state.ship.vy = state.ship.boost; AudioSys.beep({freq:940, dur:0.06, type:'square'}); }
+    addEventListener('keydown', e=>{
+      if([' ','w','W','ArrowUp'].includes(e.key)){ boost(); e.preventDefault(); }
+      if(e.key==='p' || e.key==='P'){ state.running = !state.running; }
+    });
+    canvas.addEventListener('pointerdown', ()=>{ boost(); });
+
+    // ===== UI Buttons =====
+    start.onclick = ()=>{ if(state.over) reset(); state.running=true; };
+    pause.onclick = ()=>{ if(!state.over) state.running = !state.running; };
+    restart.onclick = ()=>{ reset(); state.running=true; };
+
+    const muteBtn = document.getElementById('muteBtn');
+    function setMuteUI(){ muteBtn.textContent = state.muted ? '🔇' : '🔈'; }
+    setMuteUI();
+    muteBtn.onclick = ()=>{ state.muted=!state.muted; localStorage.setItem('flappy_ship_muted', JSON.stringify(state.muted)); AudioSys.setMuted(state.muted); setMuteUI(); showToast('Saved!'); };
+
+    const toast = document.getElementById('toast');
+    function showToast(txt){ toast.textContent = txt; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 900); }
+
+    // ===== Update =====
+    function update(dt){
+      if(!state.running || state.over) return;
+      state.t += dt; // difficulty ramp
+      state.speed = 140*DPR + Math.min(120*DPR, state.t*10*DPR);
+
+      // Ship physics
+      state.ship.vy += state.ship.grav*DPR*dt; state.ship.y += state.ship.vy*dt; state.ship.y = clamp(state.ship.y, 8*DPR, canvas.height-8*DPR);
+      state.ship.rot = clamp((state.ship.vy/ (360*DPR)), -0.5, 0.6);
+
+      // Spawn pipes
+      state.spawn -= dt; const every = Math.max(1.0, 1.6 - state.t*0.02);
+      if(state.spawn <= 0){ spawnPipe(); state.spawn = every; }
+
+      // Move pipes & score
+      for(const p of state.pipes){ p.x -= state.speed*dt; if(!p.scored && p.x + p.w < state.ship.x - state.ship.r){ p.scored=true; state.score++; document.getElementById('score').textContent = state.score; AudioSys.beep({freq:520, dur:0.07, type:'sine'}); } }
+      state.pipes = state.pipes.filter(p => p.x + p.w > -10);
+
+      // Collisions
+      const sx = state.ship.x, sy = state.ship.y, r = state.ship.r*DPR;
+      // Ground/ceiling (already clamped, but end if hitting edges hard)
+      if(sy <= 8*DPR || sy >= canvas.height-8*DPR){ gameOver(); return; }
+
+      for(const p of state.pipes){
+        const inX = sx + r > p.x && sx - r < p.x + p.w;
+        if(!inX) continue;
+        const topRect = {x:p.x, y:0, w:p.w, h:p.top};
+        const botRect = {x:p.x, y:p.top + p.gap, w:p.w, h:canvas.height - (p.top+p.gap)};
+        if(circleRectCollide(sx, sy, r, topRect) || circleRectCollide(sx, sy, r, botRect)) { gameOver(); return; }
+      }
+    }
+
+    function circleRectCollide(cx, cy, cr, rect){
+      const rx = clamp(cx, rect.x, rect.x + rect.w);
+      const ry = clamp(cy, rect.y, rect.y + rect.h);
+      const dx = cx - rx, dy = cy - ry; return (dx*dx + dy*dy) < (cr*cr);
+    }
+
+    // ===== Draw =====
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // Space gradient
+      const g = ctx.createLinearGradient(0,0,0,canvas.height); g.addColorStop(0,'#070b19'); g.addColorStop(1,'#030612'); ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // Stars parallax
+      for(const s of state.stars){ const x = (s.x - state.t*20*s.z) % (canvas.width); const y = s.y; ctx.globalAlpha = .5 + .5*s.z; ctx.fillStyle = '#a3c6ff'; ctx.fillRect((x+canvas.width)%canvas.width, y, 1.2*s.z, 1.2*s.z); }
+      ctx.globalAlpha=1;
+
+      // Pipes as asteroid belts
+      for(const p of state.pipes){
+        drawAsteroidBelt(p);
+      }
+
+      // Ship
+      drawShip(state.ship.x, state.ship.y, state.ship.rot);
+
+      // HUD text in-canvas
+      ctx.fillStyle='rgba(230,237,246,.9)'; ctx.font = `${14*DPR}px system-ui,Segoe UI,Roboto`;
+      ctx.fillText(`Score ${state.score}`, 12*DPR, 22*DPR);
+    }
+
+    function drawShip(x,y,rot){
+      ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+      // Body
+      ctx.beginPath(); ctx.moveTo(18*DPR,0); ctx.lineTo(-12*DPR,10*DPR); ctx.lineTo(-8*DPR,0); ctx.lineTo(-12*DPR,-10*DPR); ctx.closePath();
+      const grad = ctx.createLinearGradient(-12*DPR,0,18*DPR,0); grad.addColorStop(0,'#1a2a63'); grad.addColorStop(1,'#6ec6ff');
+      ctx.fillStyle = grad; ctx.fill(); ctx.strokeStyle='#264b9a'; ctx.lineWidth=2; ctx.stroke();
+      // Window
+      ctx.beginPath(); ctx.arc(2*DPR,-2*DPR,3.5*DPR,0,Math.PI*2); ctx.fillStyle='#9de0ff'; ctx.fill();
+      // Thruster flame when moving up
+      if(state.ship.vy < -30*DPR){ ctx.beginPath(); ctx.moveTo(-12*DPR,0); ctx.lineTo(-18*DPR,0); ctx.lineTo(-14*DPR,rand(-6*DPR,6*DPR)); ctx.closePath(); ctx.fillStyle='#ffcf6b'; ctx.fill(); }
+      ctx.restore();
+    }
+
+    function drawAsteroidBelt(p){
+      // Top
+      drawBeltRect(p.x, 0, p.w, p.top);
+      // Bottom
+      const y2 = p.top + p.gap; drawBeltRect(p.x, y2, p.w, canvas.height - y2);
+    }
+
+    function drawBeltRect(x,y,w,h){
+      // Base
+      ctx.fillStyle = '#1a213d'; ctx.fillRect(x,y,w,h);
+      // Pebbles
+      const n = Math.max(6, Math.floor(h/(22*DPR)));
+      for(let i=0;i<n;i++){
+        const r = rand(3*DPR, 9*DPR); const px = x + rand(6*DPR, w-6*DPR); const py = y + rand(6*DPR, h-6*DPR);
+        ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fillStyle = '#2a3a63'; ctx.fill();
+        ctx.beginPath(); ctx.arc(px-r*.3,py-r*.2,r*.4,0,Math.PI*2); ctx.fillStyle = '#32497e'; ctx.fill();
+      }
+      // Edge glow
+      const grad = ctx.createLinearGradient(x+w, y, x, y);
+      grad.addColorStop(0,'rgba(110,198,255,.18)'); grad.addColorStop(1,'rgba(110,198,255,0)');
+      ctx.fillStyle = grad; ctx.fillRect(x,y,w,h);
+    }
+
+    function gameOver(){
+      state.over = true; state.running = false; AudioSys.beep({freq:220, dur:0.2, type:'triangle'});
+      state.best = Math.max(state.best, state.score); localStorage.setItem('flappy_ship_best', String(state.best));
+      document.getElementById('best').textContent = state.best;
+      // Overlay
+      ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#e6edf6'; ctx.font=`${28*DPR}px system-ui,Segoe UI,Roboto`; ctx.textAlign='center';
+      ctx.fillText('Game Over', canvas.width/2, canvas.height/2 - 20*DPR);
+      ctx.font=`${16*DPR}px system-ui,Segoe UI,Roboto`;
+      ctx.fillText(`Score: ${state.score} • Best: ${state.best}`, canvas.width/2, canvas.height/2 + 8*DPR);
+      ctx.textAlign='start';
+    }
+
+    // ===== Loop =====
+    function loop(ts){
+      const dt = Math.min(0.033, (ts - state.last)/1000 || 0); state.last = ts;
+      update(dt); draw(); requestAnimationFrame(loop);
+    }
+
+    // Init
+    reset(); requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
