@@ -1,1 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Circle Dodger</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #10162a;
+      --text: #e9edf5;
+      --accent: #4da3ff;
+      --accent-2: #9bff7a;
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 50% -10%, #1b2440 0%, var(--bg) 60%, #050814 100%);
+      display: grid;
+      place-items: center;
+    }
+    .wrap {
+      width: min(100vw, 900px);
+      padding: 16px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .title h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
+    .pill { font-size: 12px; opacity: .8; padding: 2px 8px; border-radius: 999px; background: #1b2242; border: 1px solid #253063; }
+
+    .panel {
+      background: linear-gradient(180deg, #0f1430 0%, #0b1024 100%);
+      border: 1px solid #213058cc;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+      overflow: hidden;
+    }
+
+    .hud { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #1b264d; }
+    .hud-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      appearance: none; border: 1px solid #2a3d72; background: #15214a; color: var(--text);
+      padding: 8px 12px; border-radius: 12px; cursor: pointer; font-weight: 600; letter-spacing: .2px;
+      transition: transform .05s ease, background .2s ease, border-color .2s ease; user-select: none;
+    }
+    .btn:hover { background: #1b2a5f; }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+
+    #gameCanvas { display: block; width: 100%; height: auto; background: #0a0f22; }
+
+    .footer { display: grid; gap: 8px; padding: 12px 14px; border-top: 1px solid #1b264d; font-size: 13px; color: #cbd5e1; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #0f162f; border: 1px solid #233463; padding: 2px 6px; border-radius: 6px; }
+
+    /* Mobile joystick */
+    .joystick {
+      position: absolute; left: 14px; bottom: 14px; width: 110px; height: 110px; display: none;
+    }
+    .joy-base { position: absolute; inset: 0; border-radius: 50%; background: #0f1735cc; border: 1px solid #26407aaa; }
+    .joy-stick { position: absolute; width: 56px; height: 56px; border-radius: 50%; background: #1a2a63; left: 27px; top: 27px; border: 1px solid #34518c; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+
+    @media (max-width: 720px) {
+      .hud { gap: 10px; }
+      .joystick { display: block; }
+    }
+
+    /* Toast */
+    .toast { position: fixed; top: 14px; right: 14px; background: #0f1735; border: 1px solid #253a72; padding: 10px 12px; border-radius: 10px; font-size: 13px; opacity: 0; transform: translateY(-10px); transition: opacity .25s, transform .25s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Circle Dodger</h1>
+        <span class="pill">HTML • Canvas • ~200 lines</span>
+      </div>
+      <button id="shareBtn" class="btn" title="Copy shareable link">Share</button>
+    </header>
+
+    <section class="panel">
+      <div class="hud">
+        <div class="hud-row">
+          <button id="startBtn" class="btn">Start</button>
+          <button id="pauseBtn" class="btn">Pause</button>
+          <button id="restartBtn" class="btn">Restart</button>
+        </div>
+        <div class="hud-row">
+          <div>Score: <strong id="score">0</strong></div>
+          <div>Best: <strong id="best">0</strong></div>
+        </div>
+      </div>
+
+      <canvas id="gameCanvas" width="900" height="540" aria-label="Game canvas" role="img"></canvas>
+
+      <div class="footer">
+        <div><strong>Controls:</strong> <span class="kbd">W/A/S/D</span> or <span class="kbd">←/↑/→/↓</span>. On mobile, drag the joystick.</div>
+        <div><strong>Goal:</strong> Dodge the squares. The longer you survive, the higher your score.</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="joystick" id="joystick" aria-hidden="true">
+    <div class="joy-base"></div>
+    <div class="joy-stick" id="joyStick"></div>
+  </div>
+
+  <div class="toast" id="toast">Link copied!</div>
+
+  <script>
+    // ===== Canvas setup with HiDPI scaling =====
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    function fitHiDPI() {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const cssWidth = canvas.clientWidth;
+      const cssHeight = Math.round(cssWidth * (540/900));
+      canvas.style.height = cssHeight + 'px';
+      canvas.width = Math.round(cssWidth * ratio);
+      canvas.height = Math.round(cssHeight * ratio);
+      return ratio;
+    }
+    let DPR = fitHiDPI();
+    window.addEventListener('resize', () => { DPR = fitHiDPI(); });
+
+    // ===== Game state =====
+    const state = {
+      running: false,
+      over: false,
+      time: 0,
+      score: 0,
+      best: Number(localStorage.getItem('circle_dodger_best')||0),
+      player: { x: 150, y: 150, r: 14, speed: 220 },
+      inputs: { up:false, down:false, left:false, right:false },
+      enemies: [],
+      spawnTimer: 0,
+      difficulty: 1,
+      lastTs: 0
+    };
+    document.getElementById('best').textContent = state.best;
+
+    // ===== Helpers =====
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    // ===== Input: keyboard =====
+    const keyMap = {
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      w: 'up', a: 'left', s: 'down', d: 'right', W: 'up', A: 'left', S: 'down', D: 'right'
+    };
+    addEventListener('keydown', (e) => { const k = keyMap[e.key]; if (k){ state.inputs[k]=true; e.preventDefault(); } });
+    addEventListener('keyup',   (e) => { const k = keyMap[e.key]; if (k){ state.inputs[k]=false; e.preventDefault(); } });
+
+    // ===== Input: mobile joystick =====
+    const joy = document.getElementById('joystick');
+    const stick = document.getElementById('joyStick');
+    let joyCenter = { x: 0, y: 0 }, dragging = false;
+
+    function setJoyFrom(dx, dy) {
+      const dead = 6, max = 34; // px
+      const mag = Math.hypot(dx, dy);
+      const n = mag > dead ? Math.min((mag - dead) / (max - dead), 1) : 0;
+      const nx = n * (dx / (mag || 1));
+      const ny = n * (dy / (mag || 1));
+      state.inputs.left  = nx < -0.15;
+      state.inputs.right = nx >  0.15;
+      state.inputs.up    = ny < -0.15;
+      state.inputs.down  = ny >  0.15;
+      stick.style.transform = `translate(${clamp(dx, -max, max)}px, ${clamp(dy, -max, max)}px)`;
+    }
+
+    function joyPos(e){
+      const t = e.touches ? e.touches[0] : e; const rect = joy.getBoundingClientRect();
+      return { x: t.clientX - (rect.left + rect.width/2), y: t.clientY - (rect.top + rect.height/2) };
+    }
+
+    ['touchstart','mousedown'].forEach(ev => joy.addEventListener(ev, (e)=>{ dragging = true; const p = joyPos(e); setJoyFrom(p.x, p.y); }));
+    ['touchmove','mousemove'].forEach(ev => joy.addEventListener(ev, (e)=>{ if(!dragging) return; const p = joyPos(e); setJoyFrom(p.x, p.y); }));
+    ['touchend','mouseup','mouseleave'].forEach(ev => joy.addEventListener(ev, ()=>{ dragging=false; stick.style.transform='translate(0,0)'; state.inputs.up=state.inputs.down=state.inputs.left=state.inputs.right=false; }));
+
+    // ===== Game logic =====
+    function resetGame() {
+      state.over = false; state.time = 0; state.score = 0; state.enemies.length = 0; state.spawnTimer = 0; state.difficulty = 1;
+      const w = canvas.width, h = canvas.height;
+      state.player.x = w * 0.3; state.player.y = h * 0.5;
+    }
+
+    function spawnEnemy() {
+      const w = canvas.width, h = canvas.height;
+      // Spawn from a random edge, move toward player with a bit of randomness
+      const edge = Math.floor(rand(0,4));
+      let x=0, y=0; const size = rand(16, 28) * DPR; const speed = rand(80, 140) * DPR * (0.7 + state.difficulty*0.12);
+      if (edge===0){ x = -size; y = rand(0, h);} // left
+      if (edge===1){ x = w+size; y = rand(0, h);} // right
+      if (edge===2){ x = rand(0, w); y = -size;} // top
+      if (edge===3){ x = rand(0, w); y = h+size;} // bottom
+      const dir = Math.atan2((state.player.y - y), (state.player.x - x)) + rand(-0.4, 0.4);
+      state.enemies.push({ x, y, s: size, vx: Math.cos(dir)*speed, vy: Math.sin(dir)*speed, life: rand(4,7) });
+    }
+
+    function update(dt) {
+      if (!state.running || state.over) return;
+      state.time += dt; state.score = Math.floor(state.time * 10);
+      document.getElementById('score').textContent = state.score;
+
+      // Difficulty ramps up over time
+      state.difficulty = 1 + state.time * 0.08;
+
+      // Spawn rate
+      state.spawnTimer -= dt;
+      const spawnEvery = Math.max(0.20, 0.85 - state.time*0.02);
+      if (state.spawnTimer <= 0) { spawnEnemy(); state.spawnTimer = spawnEvery; }
+
+      // Move player
+      const sp = state.player.speed * DPR;
+      let dx = 0, dy = 0;
+      if (state.inputs.left)  dx -= 1;
+      if (state.inputs.right) dx += 1;
+      if (state.inputs.up)    dy -= 1;
+      if (state.inputs.down)  dy += 1;
+      const mag = Math.hypot(dx, dy) || 1;
+      state.player.x = clamp(state.player.x + (dx/mag) * sp * dt, state.player.r, canvas.width - state.player.r);
+      state.player.y = clamp(state.player.y + (dy/mag) * sp * dt, state.player.r, canvas.height - state.player.r);
+
+      // Move enemies and cull
+      for (const e of state.enemies) {
+        e.x += e.vx * dt; e.y += e.vy * dt; e.life -= dt;
+      }
+      state.enemies = state.enemies.filter(e => e.life > 0 && e.x > -100 && e.x < canvas.width+100 && e.y > -100 && e.y < canvas.height+100);
+
+      // Collisions
+      const pr = state.player.r;
+      for (const e of state.enemies) {
+        const closestX = clamp(state.player.x, e.x, e.x + e.s);
+        const closestY = clamp(state.player.y, e.y, e.y + e.s);
+        const dist = Math.hypot(state.player.x - closestX, state.player.y - closestY);
+        if (dist < pr) { endGame(); break; }
+      }
+    }
+
+    function draw() {
+      // Background grid
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const g = 32 * DPR; ctx.globalAlpha = 0.35; ctx.fillStyle = '#0c1433';
+      for (let x=0; x<canvas.width; x+=g) for (let y=0; y<canvas.height; y+=g) ctx.fillRect(x, y, 1, 1);
+      ctx.globalAlpha = 1;
+
+      // Player
+      const p = state.player; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      const grd = ctx.createRadialGradient(p.x-3, p.y-3, 2, p.x, p.y, p.r+6);
+      grd.addColorStop(0, '#a7d4ff'); grd.addColorStop(1, '#377df5');
+      ctx.fillStyle = grd; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#1b3d9a'; ctx.stroke();
+
+      // Enemies
+      for (const e of state.enemies) {
+        ctx.fillStyle = '#ff6b6b';
+        ctx.globalAlpha = 0.92;
+        ctx.fillRect(e.x, e.y, e.s, e.s);
+        ctx.globalAlpha = 1;
+      }
+
+      // Score HUD (in-canvas)
+      ctx.font = `${14*DPR}px system-ui,Segoe UI,Roboto`;
+      ctx.fillStyle = 'rgba(233,237,245,.9)';
+      ctx.fillText(`Score ${state.score}`, 12*DPR, 22*DPR);
+    }
+
+    function endGame() {
+      state.over = true; state.running = false;
+      state.best = Math.max(state.best, state.score);
+      localStorage.setItem('circle_dodger_best', String(state.best));
+      document.getElementById('best').textContent = state.best;
+      // Draw a quick overlay
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#e9edf5'; ctx.font = `${28*DPR}px system-ui,Segoe UI,Roboto`;
+      ctx.textAlign = 'center'; ctx.fillText('Game Over', canvas.width/2, canvas.height/2 - 20*DPR);
+      ctx.font = `${16*DPR}px system-ui,Segoe UI,Roboto`;
+      ctx.fillText(`Score: ${state.score}   •   Best: ${state.best}`, canvas.width/2, canvas.height/2 + 8*DPR);
+      ctx.textAlign = 'start';
+    }
+
+    function loop(ts) {
+      const dt = Math.min(0.033, (ts - state.lastTs) / 1000 || 0); // clamp dt
+      state.lastTs = ts;
+      update(dt); draw(); requestAnimationFrame(loop);
+    }
+
+    // ===== UI bindings =====
+    document.getElementById('startBtn').onclick = () => { if (state.over) resetGame(); state.running = true; };
+    document.getElementById('pauseBtn').onclick = () => { state.running = !state.running && !state.over; };
+    document.getElementById('restartBtn').onclick = () => { resetGame(); state.running = true; };
+
+    // Share button copies current URL
+    const toast = document.getElementById('toast');
+    document.getElementById('shareBtn').onclick = async () => {
+      try { await navigator.clipboard.writeText(location.href); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 900); } catch {}
+    };
+
+    // Kick things off
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
 
