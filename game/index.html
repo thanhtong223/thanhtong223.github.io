@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Circle Dodger</title>
   <style>
     :root {
@@ -14,7 +14,7 @@
       --danger: #ff6b6b;
     }
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html, body { height: 100%; overscroll-behavior: none; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
@@ -22,64 +22,43 @@
       background: radial-gradient(1200px 800px at 50% -10%, #1b2440 0%, var(--bg) 60%, #050814 100%);
       display: grid;
       place-items: center;
+      touch-action: none; /* disable touch scroll/zoom */
     }
-    .wrap {
-      width: min(100vw, 900px);
-      padding: 16px;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .title {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-    }
+    .wrap { width: min(100vw, 900px); padding: 16px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .title { display: flex; align-items: baseline; gap: 10px; }
     .title h1 { font-size: 20px; margin: 0; letter-spacing: .5px; }
     .pill { font-size: 12px; opacity: .8; padding: 2px 8px; border-radius: 999px; background: #1b2242; border: 1px solid #253063; }
 
-    .panel {
-      background: linear-gradient(180deg, #0f1430 0%, #0b1024 100%);
-      border: 1px solid #213058cc;
-      border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
-      overflow: hidden;
-    }
+    .panel { background: linear-gradient(180deg, #0f1430 0%, #0b1024 100%); border: 1px solid #213058cc; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05); overflow: hidden; position: relative; }
 
     .hud { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #1b264d; }
     .hud-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      appearance: none; border: 1px solid #2a3d72; background: #15214a; color: var(--text);
-      padding: 8px 12px; border-radius: 12px; cursor: pointer; font-weight: 600; letter-spacing: .2px;
-      transition: transform .05s ease, background .2s ease, border-color .2s ease; user-select: none;
-    }
+    .btn { appearance: none; border: 1px solid #2a3d72; background: #15214a; color: var(--text); padding: 8px 12px; border-radius: 12px; cursor: pointer; font-weight: 600; letter-spacing: .2px; transition: transform .05s ease, background .2s ease, border-color .2s ease; user-select: none; }
     .btn:hover { background: #1b2a5f; }
     .btn:active { transform: translateY(1px) scale(0.99); }
 
-    #gameCanvas { display: block; width: 100%; height: auto; background: #0a0f22; }
+    #gameCanvas { display: block; width: 100%; height: auto; background: #0a0f22; touch-action: none; }
 
     .footer { display: grid; gap: 8px; padding: 12px 14px; border-top: 1px solid #1b264d; font-size: 13px; color: #cbd5e1; }
     .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #0f162f; border: 1px solid #233463; padding: 2px 6px; border-radius: 6px; }
 
     /* Mobile joystick */
-    .joystick {
-      position: absolute; left: 14px; bottom: 14px; width: 110px; height: 110px; display: none;
-    }
+    .joystick { position: absolute; left: 14px; bottom: 14px; width: 110px; height: 110px; display: none; touch-action: none; }
     .joy-base { position: absolute; inset: 0; border-radius: 50%; background: #0f1735cc; border: 1px solid #26407aaa; }
     .joy-stick { position: absolute; width: 56px; height: 56px; border-radius: 50%; background: #1a2a63; left: 27px; top: 27px; border: 1px solid #34518c; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
-
-    @media (max-width: 720px) {
-      .hud { gap: 10px; }
-      .joystick { display: block; }
-    }
+    @media (max-width: 720px) { .hud { gap: 10px; } .joystick { display: block; } }
 
     /* Toast */
     .toast { position: fixed; top: 14px; right: 14px; background: #0f1735; border: 1px solid #253a72; padding: 10px 12px; border-radius: 10px; font-size: 13px; opacity: 0; transform: translateY(-10px); transition: opacity .25s, transform .25s; }
     .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Modal */
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); display: none; place-items: center; }
+    .modal { width: min(92vw, 420px); background: linear-gradient(180deg,#0e142f 0%,#0a0f24 100%); border: 1px solid #263b76; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04); padding: 18px; }
+    .modal h2 { margin: 0 0 10px 0; font-size: 20px; }
+    .modal p { margin: 6px 0; color: #cbd5e1; }
+    .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
   </style>
 </head>
 <body>
@@ -87,7 +66,7 @@
     <header>
       <div class="title">
         <h1>Circle Dodger</h1>
-        <span class="pill">HTML • Canvas • ~200 lines</span>
+        <span class="pill">HTML • Canvas • Mobile joystick</span>
       </div>
       <button id="shareBtn" class="btn" title="Copy shareable link">Share</button>
     </header>
@@ -95,6 +74,7 @@
     <section class="panel">
       <div class="hud">
         <div class="hud-row">
+          <a class="btn" href="/" title="Back to home">🏠 Home</a>
           <button id="startBtn" class="btn">Start</button>
           <button id="pauseBtn" class="btn">Pause</button>
           <button id="restartBtn" class="btn">Restart</button>
@@ -110,6 +90,19 @@
       <div class="footer">
         <div><strong>Controls:</strong> <span class="kbd">W/A/S/D</span> or <span class="kbd">←/↑/→/↓</span>. On mobile, drag the joystick.</div>
         <div><strong>Goal:</strong> Dodge the squares. The longer you survive, the higher your score.</div>
+      </div>
+
+      <!-- Modal Backdrop -->
+      <div id="gameModal" class="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <h2 id="modalTitle">Game Over</h2>
+          <p>Score: <strong id="modalScore">0</strong></p>
+          <p>Best: <strong id="modalBest">0</strong></p>
+          <div class="actions">
+            <button id="modalRetry" class="btn">Retry</button>
+            <button id="modalClose" class="btn">Close</button>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -168,7 +161,7 @@
     // ===== Input: mobile joystick =====
     const joy = document.getElementById('joystick');
     const stick = document.getElementById('joyStick');
-    let joyCenter = { x: 0, y: 0 }, dragging = false;
+    let dragging = false;
 
     function setJoyFrom(dx, dy) {
       const dead = 6, max = 34; // px
@@ -188,15 +181,26 @@
       return { x: t.clientX - (rect.left + rect.width/2), y: t.clientY - (rect.top + rect.height/2) };
     }
 
-    ['touchstart','mousedown'].forEach(ev => joy.addEventListener(ev, (e)=>{ dragging = true; const p = joyPos(e); setJoyFrom(p.x, p.y); }));
-    ['touchmove','mousemove'].forEach(ev => joy.addEventListener(ev, (e)=>{ if(!dragging) return; const p = joyPos(e); setJoyFrom(p.x, p.y); }));
-    ['touchend','mouseup','mouseleave'].forEach(ev => joy.addEventListener(ev, ()=>{ dragging=false; stick.style.transform='translate(0,0)'; state.inputs.up=state.inputs.down=state.inputs.left=state.inputs.right=false; }));
+    const passiveFalse = { passive: false };
+    joy.addEventListener('touchstart', (e)=>{ dragging = true; if(e.cancelable) e.preventDefault(); const p = joyPos(e); setJoyFrom(p.x, p.y); }, passiveFalse);
+    joy.addEventListener('touchmove',  (e)=>{ if(!dragging) return; if(e.cancelable) e.preventDefault(); const p = joyPos(e); setJoyFrom(p.x, p.y); }, passiveFalse);
+    joy.addEventListener('touchend',   (e)=>{ if(e.cancelable) e.preventDefault(); dragging=false; stick.style.transform='translate(0,0)'; state.inputs.up=state.inputs.down=state.inputs.left=state.inputs.right=false; }, passiveFalse);
+    joy.addEventListener('touchcancel',(e)=>{ if(e.cancelable) e.preventDefault(); dragging=false; stick.style.transform='translate(0,0)'; state.inputs.up=state.inputs.down=state.inputs.left=state.inputs.right=false; }, passiveFalse);
+
+    joy.addEventListener('mousedown', (e)=>{ dragging = true; const p = joyPos(e); setJoyFrom(p.x, p.y); });
+    joy.addEventListener('mousemove', (e)=>{ if(!dragging) return; const p = joyPos(e); setJoyFrom(p.x, p.y); });
+    joy.addEventListener('mouseup',   ()=>{ dragging=false; stick.style.transform='translate(0,0)'; state.inputs.up=state.inputs.down=state.inputs.left=state.inputs.right=false; });
+    joy.addEventListener('mouseleave',()=>{ dragging=false; stick.style.transform='translate(0,0)'; state.inputs.up=state.inputs.down=state.inputs.left=state.inputs.right=false; });
+
+    // Block page scroll while dragging anywhere
+    window.addEventListener('touchmove', (e)=>{ if (dragging && e.cancelable) e.preventDefault(); }, passiveFalse);
 
     // ===== Game logic =====
     function resetGame() {
       state.over = false; state.time = 0; state.score = 0; state.enemies.length = 0; state.spawnTimer = 0; state.difficulty = 1;
       const w = canvas.width, h = canvas.height;
       state.player.x = w * 0.3; state.player.y = h * 0.5;
+      hideModal();
     }
 
     function spawnEnemy() {
@@ -280,19 +284,30 @@
       ctx.fillText(`Score ${state.score}`, 12*DPR, 22*DPR);
     }
 
+    // ===== Modal helpers =====
+    const modal = document.getElementById('gameModal');
+    const modalScore = document.getElementById('modalScore');
+    const modalBest = document.getElementById('modalBest');
+    const modalRetry = document.getElementById('modalRetry');
+    const modalClose = document.getElementById('modalClose');
+
+    function showModal(score, best){
+      modalScore.textContent = score;
+      modalBest.textContent = best;
+      modal.style.display = 'grid';
+    }
+    function hideModal(){ modal.style.display = 'none'; }
+
     function endGame() {
       state.over = true; state.running = false;
       state.best = Math.max(state.best, state.score);
       localStorage.setItem('circle_dodger_best', String(state.best));
       document.getElementById('best').textContent = state.best;
-      // Draw a quick overlay
-      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle = '#e9edf5'; ctx.font = `${28*DPR}px system-ui,Segoe UI,Roboto`;
-      ctx.textAlign = 'center'; ctx.fillText('Game Over', canvas.width/2, canvas.height/2 - 20*DPR);
-      ctx.font = `${16*DPR}px system-ui,Segoe UI,Roboto`;
-      ctx.fillText(`Score: ${state.score}   •   Best: ${state.best}`, canvas.width/2, canvas.height/2 + 8*DPR);
-      ctx.textAlign = 'start';
+      showModal(state.score, state.best);
     }
+
+    modalRetry.onclick = () => { resetGame(); state.running = true; };
+    modalClose.onclick = () => { hideModal(); };
 
     function loop(ts) {
       const dt = Math.min(0.033, (ts - state.lastTs) / 1000 || 0); // clamp dt
@@ -302,7 +317,7 @@
 
     // ===== UI bindings =====
     document.getElementById('startBtn').onclick = () => { if (state.over) resetGame(); state.running = true; };
-    document.getElementById('pauseBtn').onclick = () => { state.running = !state.running && !state.over; };
+    document.getElementById('pauseBtn').onclick = () => { if (!state.over) state.running = !state.running; };
     document.getElementById('restartBtn').onclick = () => { resetGame(); state.running = true; };
 
     // Share button copies current URL
@@ -317,4 +332,3 @@
   </script>
 </body>
 </html>
-
