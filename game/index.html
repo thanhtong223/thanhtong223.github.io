@@ -16,7 +16,6 @@
     html,body{height:100%}
     body{margin:0; background:var(--bg); color:var(--text); font-family:var(--font); display:grid; grid-template-rows: 1fr auto}
 
-    /* Editor */
     .editor-wrap{padding:24px; display:flex; align-items:flex-start; justify-content:center}
     .editor{
       width:min(1100px, 95vw);
@@ -27,24 +26,22 @@
     .editor:empty:before{ content: 'Just start'; color: var(--muted); }
     .editor:focus{ outline:none; }
 
-    /* Bottom bar like the screenshot */
     .bar{
       display:flex; align-items:center; justify-content:space-between;
       gap:12px; padding:12px 16px; color:#cfcfcf; font-size:14px; opacity:.9;
       border-top:1px solid rgba(255,255,255,.06);
+      font-family:'Lato', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
     .row{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
     .sep{opacity:.4}
-    .btn{appearance:none; background:transparent; border:0; color:inherit; cursor:pointer; padding:4px 6px; border-radius:8px}
+    .btn{appearance:none; background:transparent; border:0; color:inherit; cursor:pointer; padding:4px 6px; border-radius:8px; font-family:'Lato', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
     .btn:hover{background:rgba(255,255,255,.06)}
+
     .pill{padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.06)}
-
     .time{min-width:56px; text-align:right}
-
     .hidden{display:none}
     .tooltip{position:fixed; bottom:56px; right:16px; background:#111; border:1px solid rgba(255,255,255,.08); padding:10px 12px; border-radius:12px; font-size:13px; color:#ddd}
 
-    /* Light theme */
     .light{ --bg:#f7f7f7; --text:#222; --muted:#999; --panel:#fff; --accent:#333; box-shadow:none }
     .light .editor{ box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 12px 40px rgba(0,0,0,.08); }
     .light .btn:hover{ background: rgba(0,0,0,.06); }
@@ -57,7 +54,7 @@
 
   <footer class="bar">
     <div class="row" id="leftBar">
-      <span id="sizeLabel" class="btn">18px</span>
+      <button id="sizeLabel" class="btn">18px</button>
       <span class="sep">•</span>
       <button class="btn" data-font="Lato,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif">Lato</button>
       <button class="btn" data-font="Arial,Helvetica,sans-serif">Arial</button>
@@ -76,29 +73,10 @@
       <button id="newBtn" class="btn">New Entry</button>
       <span class="sep">•</span>
       <button id="themeBtn" class="btn" title="Toggle theme">🌙</button>
-      <button id="moreBtn" class="btn" title="More">⋮</button>
     </div>
   </footer>
 
-  <div id="moreMenu" class="tooltip hidden">
-    <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px">Font size
-      <button class="btn pill" data-size="16">16</button>
-      <button class="btn pill" data-size="18">18</button>
-      <button class="btn pill" data-size="20">20</button>
-      <button class="btn pill" data-size="22">22</button>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px">
-      <button id="exportBtn" class="btn pill">Export</button>
-      <label class="btn pill" for="importFile">Import</label>
-      <input id="importFile" type="file" accept="application/json" class="hidden" />
-    </div>
-    <div>
-      <button id="deleteBtn" class="btn pill" style="background:#3b0e0e">Delete note</button>
-    </div>
-  </div>
-
   <script>
-    // ===== Storage model =====
     const KEY = 'notes_minimal_v1';
     const uid = () => Math.random().toString(36).slice(2,9);
 
@@ -110,85 +88,71 @@
     const editor = document.getElementById('editor');
     const sizeLabel = document.getElementById('sizeLabel');
 
-    // ===== Notes helpers =====
     function newNote(){
       const n = { id: uid(), html: '', created: Date.now(), updated: Date.now(), font: getComputedStyle(document.body).getPropertyValue('--font'), size: parseInt(getComputedStyle(document.body).getPropertyValue('--size')) };
       state.notes.push(n); saveAll(state.notes); openNote(n.id);
     }
+
     function openNote(id){
       const n = state.notes.find(x=>x.id===id); if(!n) return;
       state.current = n;
       editor.innerHTML = n.html || '';
-      document.documentElement.style.setProperty('--font', n.font || getComputedStyle(document.body).getPropertyValue('--font'));
+      document.documentElement.style.setProperty('--font', n.font);
       document.documentElement.style.setProperty('--size', (n.size||18)+'px');
-      sizeLabel.textContent = (n.size||18) + 'px';
+      sizeLabel.textContent = (n.size||18)+'px';
       history.replaceState(null, '', '#'+id);
     }
+
     function saveCurrent(){ if(!state.current) return; state.current.html = editor.innerHTML; state.current.updated = Date.now(); saveAll(state.notes); }
-    function deleteCurrent(){ if(!state.current) return; const i = state.notes.findIndex(n=>n.id===state.current.id); if(i>-1){ state.notes.splice(i,1); saveAll(state.notes); state.current=null; } if(state.notes[0]) openNote(state.notes[0].id); else { editor.innerHTML=''; newNote(); } }
 
-    // ===== Theme =====
-    function applyTheme(){ document.body.classList.toggle('light', state.theme==='light'); document.getElementById('themeBtn').textContent = state.theme==='light' ? '☀️' : '🌙'; }
-    function toggleTheme(){ state.theme = state.theme==='light'?'dark':'light'; localStorage.setItem('theme', state.theme); applyTheme(); }
-
-    // ===== Font & Size controls =====
+    // Font selector (buttons keep Lato)
     function setFont(f){ document.documentElement.style.setProperty('--font', f); if(state.current){ state.current.font=f; saveAll(state.notes);} }
-    function setSize(px){ document.documentElement.style.setProperty('--size', px+'px'); sizeLabel.textContent = px+'px'; if(state.current){ state.current.size=px; saveAll(state.notes);} }
-
     document.querySelectorAll('[data-font]').forEach(btn=>btn.addEventListener('click', ()=> setFont(btn.getAttribute('data-font'))));
+
     document.getElementById('fontRandom').onclick = ()=>{
-      const choices = [
-        "'Lato', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
-        "Arial, Helvetica, sans-serif",
-        "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
-        "Georgia, 'Times New Roman', serif"
-      ]; setFont(choices[Math.floor(Math.random()*choices.length)]);
+      const choices = ["'Lato', system-ui", "Arial, Helvetica, sans-serif", "system-ui, -apple-system", "Georgia, 'Times New Roman', serif"];
+      setFont(choices[Math.floor(Math.random()*choices.length)]);
     };
 
-    // More menu
-    const moreBtn = document.getElementById('moreBtn');
-    const moreMenu = document.getElementById('moreMenu');
-    moreBtn.onclick = ()=>{ moreMenu.classList.toggle('hidden'); };
-    document.addEventListener('click', (e)=>{ if(!moreMenu.classList.contains('hidden') && !moreMenu.contains(e.target) && e.target!==moreBtn){ moreMenu.classList.add('hidden'); }});
-    moreMenu.querySelectorAll('[data-size]').forEach(b=> b.addEventListener('click', ()=> setSize(parseInt(b.dataset.size))));
-
-    // Export / Import
-    document.getElementById('exportBtn').onclick = ()=>{
-      const blob = new Blob([JSON.stringify(state.notes,null,2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='notes-export.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    // Font size button toggles size (16–22px cycle)
+    const sizes = [16,18,20,22];
+    let currentSizeIndex = 1;
+    sizeLabel.onclick = ()=>{
+      currentSizeIndex = (currentSizeIndex + 1) % sizes.length;
+      const s = sizes[currentSizeIndex];
+      document.documentElement.style.setProperty('--size', s+'px');
+      sizeLabel.textContent = s+'px';
+      if(state.current){ state.current.size=s; saveAll(state.notes);} 
     };
-    document.getElementById('importFile').addEventListener('change', (e)=>{
-      const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload=()=>{ try{ const arr = JSON.parse(r.result); if(Array.isArray(arr)){ state.notes = arr; saveAll(state.notes); openNote(state.notes[0]?.id || newNote()); } }catch{ alert('Invalid file'); } }; r.readAsText(f);
-    });
 
-    // Delete
-    document.getElementById('deleteBtn').onclick = deleteCurrent;
-
-    // New Entry
-    document.getElementById('newBtn').onclick = newNote;
-
-    // Fullscreen
-    document.getElementById('fsBtn').onclick = ()=>{ if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); } else { document.exitFullscreen().catch(()=>{}); } };
-
-    // Chat (placeholder)
-    document.getElementById('chatBtn').onclick = ()=> alert('Chat placeholder — hook this to whatever you like.');
+    // Timer instead of static clock
+    const clockEl = document.getElementById('clock');
+    let startTime = Date.now();
+    function updateTimer(){
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+      const s = String(elapsed % 60).padStart(2,'0');
+      clockEl.textContent = `${m}:${s}`;
+    }
+    setInterval(updateTimer, 1000);
 
     // Theme toggle
+    function applyTheme(){ document.body.classList.toggle('light', state.theme==='light'); document.getElementById('themeBtn').textContent = state.theme==='light'?'☀️':'🌙'; }
+    function toggleTheme(){ state.theme = state.theme==='light'?'dark':'light'; localStorage.setItem('theme', state.theme); applyTheme(); }
     document.getElementById('themeBtn').onclick = toggleTheme;
 
-    // Clock
-    function tick(){ const d = new Date(); const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); document.getElementById('clock').textContent = `${h}:${m}`; }
-    tick(); setInterval(tick, 30_000);
+    document.getElementById('newBtn').onclick = newNote;
+    document.getElementById('fsBtn').onclick = ()=>{ if(!document.fullscreenElement){ document.documentElement.requestFullscreen(); } else { document.exitFullscreen(); } };
 
-    // Autosave while typing (debounced)
-    let tmr; editor.addEventListener('input', ()=>{ clearTimeout(tmr); tmr = setTimeout(saveCurrent, 500); });
+    // Autosave typing
+    let tmr; editor.addEventListener('input', ()=>{ clearTimeout(tmr); tmr=setTimeout(saveCurrent,500); });
 
     // Init
     applyTheme();
     if(state.notes.length===0){ newNote(); }
     else {
-      const hashId = location.hash.slice(1);
-      if(hashId && state.notes.find(n=>n.id===hashId)) openNote(hashId); else openNote(state.notes[0].id);
+      const hash = location.hash.slice(1);
+      if(hash && state.notes.find(n=>n.id===hash)) openNote(hash); else openNote(state.notes[0].id);
     }
   </script>
 </body>
