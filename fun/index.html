@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multiplayer Asteroids</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="hud">
+    <div><b>Room</b>: <span id="roomId"></span></div>
+    <div><b>Role</b>: <span id="role"></span></div>
+    <div><b>Players</b>: <span id="playerCount">0</span></div>
+    <div class="help">Host opens this page first and shares the URL. If clients are asked for Host Peer ID, paste the ID shown here.</div>
+  </div>
+
+  <canvas id="game" width="960" height="600"></canvas>
+
+  <!-- PeerJS from CDN -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script type="module" src="net.js"></script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
