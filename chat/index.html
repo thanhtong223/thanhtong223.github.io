@@ -3,39 +3,52 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Realtime Chat</title>
+  <title>Chat</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
-    header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; gap: 8px; align-items: center; }
-    main { max-width: 800px; margin: 0 auto; padding: 16px; }
-    #log { border: 1px solid #eee; height: 60vh; overflow-y: auto; padding: 12px; border-radius: 8px; background: #fafafa; }
-    .msg { margin: 8px 0; }
-    .meta { font-size: 12px; color: #666; }
-    form { margin-top: 12px; display: flex; gap: 8px; }
-    input, button { padding: 8px 10px; }
-    input[type="text"] { flex: 1; }
+    :root { --bg:#f6f7fb; --panel:#ffffff; --muted:#667085; --line:#e6e8ee; --me:#e9f5ff; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color:#101828; }
+    header { position:sticky; top:0; z-index:1; background:var(--panel); border-bottom:1px solid var(--line); padding:10px 14px; display:flex; align-items:center; gap:10px; }
+    header .dot { width:10px; height:10px; border-radius:50%; background:#aaa; }
+    header .dot.live { background:#22c55e; }
+    header .room { font-weight:600; }
+    main { max-width:800px; margin:0 auto; padding:12px 12px 90px; }
+    #log { display:flex; flex-direction:column; gap:10px; }
+    .msg { display:flex; flex-direction:column; max-width:72%; padding:10px 12px; border-radius:12px; background:var(--panel); box-shadow:0 1px 0 rgba(0,0,0,0.03); }
+    .me { align-self:flex-end; background:var(--me); }
+    .meta { font-size:12px; color:var(--muted); margin-top:4px; }
+    .author { font-weight:600; }
+    form#composer { position:fixed; left:0; right:0; bottom:0; background:var(--panel); border-top:1px solid var(--line); padding:10px; }
+    .row { max-width:800px; margin:0 auto; display:flex; gap:8px; }
+    input, button { padding:10px 12px; border:1px solid var(--line); border-radius:10px; font:inherit; }
+    input[type="text"] { flex:1; }
+    input#author { width:180px; }
+    button { background:#1f6feb; color:white; border-color:#1f6feb; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .hint { font-size:12px; color:var(--muted); margin-top:6px; text-align:center; }
   </style>
 </head>
 <body>
   <header>
-    <strong>Room:</strong>
-    <input id="room" placeholder="e.g. general" />
-    <button id="join">Join</button>
-    <span id="status" class="meta"></span>
+    <div class="dot" id="statusDot"></div>
+    <div class="room" id="roomLabel"></div>
+    <div class="hint" style="margin-left:auto;">Auto saves your name, press Enter to send</div>
   </header>
 
   <main>
-    <div id="log"></div>
-    <form id="sendForm">
-      <input id="author" placeholder="Your name" />
-      <input id="content" placeholder="Write a message" />
-      <button type="submit">Send</button>
-    </form>
+    <div id="log" aria-live="polite"></div>
   </main>
 
-  <script src="https://esm.sh/@supabase/supabase-js@2"></script>
+  <form id="composer" autocomplete="off">
+    <div class="row">
+      <input id="author" placeholder="Your name" />
+      <input id="content" placeholder="Write a message" />
+      <button id="sendBtn" type="submit">Send</button>
+    </div>
+  </form>
+
   <script type="module" src="./supabase-config.js"></script>
   <script type="module" src="./main.js"></script>
+  <script src="https://esm.sh/@supabase/supabase-js@2"></script>
 </body>
 </html>
