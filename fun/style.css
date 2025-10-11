@@ -1,0 +1,4 @@
+html, body { margin: 0; height: 100%; background: #0b0f12; color: #e6edf3; font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif; }
+.hud { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,.5); padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+.hud .help { margin-top: 6px; opacity: .8; max-width: 360px }
+#game { display: block; margin: 0 auto; background: #0d1117; border: 1px solid #1f2630; }
