@@ -11,7 +11,23 @@
     <div><b>Room</b>: <span id="roomId"></span></div>
     <div><b>Role</b>: <span id="role"></span></div>
     <div><b>Players</b>: <span id="playerCount">0</span></div>
-    <div class="help">Host opens this page first and shares the URL. If clients are asked for Host Peer ID, paste the ID shown here.</div>
+
+    <div id="hostOnly" style="display:none; margin-top:8px;">
+      <div><b>Host ID</b>: <span id="hostId">(waiting…)</span></div>
+      <div class="row" style="margin-top:6px;">
+        <input id="inviteLink" type="text" readonly style="width:100%; padding:6px;"/>
+      </div>
+      <div class="row" style="margin-top:6px;">
+        <button id="copyBtn">Copy invite link</button>
+      </div>
+      <div class="help" style="margin-top:6px;">
+        Share this link with friends. It includes the Host ID so they won't be prompted.
+      </div>
+    </div>
+
+    <div class="help" style="margin-top:8px;">
+      If clients are asked for Host Peer ID, paste the ID shown here.
+    </div>
   </div>
 
   <canvas id="game" width="960" height="600"></canvas>
@@ -20,5 +36,22 @@
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script type="module" src="net.js"></script>
   <script type="module" src="game.js"></script>
+
+  <script>
+    // Copy button handler, works after net.js fills the invite link.
+    document.addEventListener('click', async (e) => {
+      if (e.target.id === 'copyBtn') {
+        const el = document.getElementById('inviteLink');
+        el.select(); el.setSelectionRange(0, 99999);
+        try {
+          await navigator.clipboard.writeText(el.value);
+          e.target.textContent = 'Copied!';
+          setTimeout(() => (e.target.textContent = 'Copy invite link'), 1200);
+        } catch {
+          alert('Link selected, press Ctrl/Cmd+C to copy.');
+        }
+      }
+    });
+  </script>
 </body>
 </html>
