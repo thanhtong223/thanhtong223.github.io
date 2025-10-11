@@ -16,7 +16,7 @@ export const Net = {
   onMessage: null,
   onClientsChange: null,
 };
-
+ 
 function randomRoom(prefix = "room") {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let s = "";
