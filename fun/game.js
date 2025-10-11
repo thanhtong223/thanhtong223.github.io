@@ -4,7 +4,7 @@
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const W = canvas.width, H = canvas.height;
+const W = canvas.width, H = canvas.height; 
 const $score = document.getElementById("score");
 const now = () => performance.now() / 1000;
 
