@@ -86,6 +86,7 @@ let timer = null;
 const basePoll = 2000;
 let backoff = basePoll;
 
+/* Utilities */
 function slugify(s) {
   return (s || "")
     .toLowerCase().trim()
@@ -96,21 +97,52 @@ function slugify(s) {
 const genCode = () => Math.random().toString(36).slice(2, 8);
 const roomUrl = (id) => `${appConfig.baseUrl}?room=${encodeURIComponent(id)}`;
 
-async function ensureRoom(id) {
-  await supabase.from("rooms").upsert({ id });
-}
-
-/* Scroll helpers */
-function scrollToBottom(smooth = false) {
-  const sc = logEl.parentElement;
-  if (!sc) return;
-  sc.scrollTo({ top: sc.scrollHeight, behavior: smooth ? "smooth" : "auto" });
-  scrollDownBtn.classList.remove("visible");
-}
-
-/* Render bubble with pulse + smart scroll */
+async function ensureRoom(id) { await supabase.from("rooms").upsert({ id }); }
 function fmt(ts) { return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
 
+/* -------- Correct scroll container detection ---------- */
+function getScroller() {
+  const el = logEl.parentElement; // <main> .chat
+  if (el && el.scrollHeight > el.clientHeight + 1) return el; // element is scrollable
+  // fallback to page scroller
+  return document.scrollingElement || document.documentElement;
+}
+function isWindowScroller(sc) {
+  return sc === document.scrollingElement || sc === document.documentElement || sc === document.body;
+}
+function nearBottom(sc, threshold = 100) {
+  return sc.scrollHeight - sc.scrollTop - sc.clientHeight < threshold;
+}
+function doScroll(sc, top, smooth) {
+  if (isWindowScroller(sc)) {
+    window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+  } else {
+    sc.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+  }
+}
+
+/* Smooth/Smart scroll helpers */
+const scrollDownBtn = document.getElementById("scrollDownBtn");
+function scrollToBottom(smooth = false) {
+  const sc = getScroller();
+  doScroll(sc, sc.scrollHeight, smooth);
+  scrollDownBtn.classList.remove("visible");
+}
+function installScrollWatcher() {
+  const sc = getScroller();
+  const handler = () => {
+    if (nearBottom(getScroller())) {
+      scrollDownBtn.classList.remove("visible");
+    }
+  };
+  // listen on both window and main to be safe
+  window.addEventListener("scroll", handler);
+  if (!isWindowScroller(sc)) sc.addEventListener("scroll", handler);
+}
+installScrollWatcher();
+scrollDownBtn.addEventListener("click", () => scrollToBottom(true));
+
+/* Rendering */
 function renderBubble({ id, author, content, created_at }) {
   const wrap = document.createElement("div");
   wrap.className = "msg " + (author === meName() ? "me" : "you");
@@ -128,17 +160,14 @@ function renderBubble({ id, author, content, created_at }) {
   wrap.appendChild(meta);
   logEl.appendChild(wrap);
 
-  const sc = logEl.parentElement;
-  if (sc) {
-    const nearBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight < 100;
-    if (nearBottom) {
-      scrollToBottom(true);
-    } else {
-      scrollDownBtn.classList.add("visible");
-      bubble.classList.add("pulse");
-      if (navigator.vibrate) navigator.vibrate(25);
-      setTimeout(() => bubble.classList.remove("pulse"), 1500);
-    }
+  const sc = getScroller();
+  if (nearBottom(sc)) {
+    scrollToBottom(true);
+  } else {
+    scrollDownBtn.classList.add("visible");
+    bubble.classList.add("pulse");
+    if (navigator.vibrate) navigator.vibrate(25);
+    setTimeout(() => bubble.classList.remove("pulse"), 1500);
   }
   return wrap;
 }
@@ -216,6 +245,9 @@ composer.addEventListener("submit", async e => {
   // optimistic
   const now = new Date().toISOString();
   const node = renderBubble({ id: -1, author: a, content: c, created_at: now });
+
+  // ensure we scroll when *you* send even if you weren't near bottom
+  scrollToBottom(true);
 
   sendBtn.disabled = true; contentEl.disabled = true;
   try {
@@ -326,27 +358,14 @@ async function bootRoom() {
   contentEl.focus();
 }
 
-/* “New messages” button */
-const scrollDownBtn = document.getElementById("scrollDownBtn");
-const scroller = logEl.parentElement;
-if (scroller) {
-  scroller.addEventListener("scroll", () => {
-    const nearBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 100;
-    if (nearBottom) scrollDownBtn.classList.remove("visible");
-  });
-}
-scrollDownBtn.addEventListener("click", () => scrollToBottom(true));
-
-/* Routing */
+/* Routing: ALWAYS show start at /chat; only join when ?room=... is present */
 (function initRouting() {
   const params = new URLSearchParams(location.search);
   const queryRoom = params.get("room");
-  const savedRoom = localStorage.getItem("last_room");
-  const savedName = getSavedName();
 
   if (queryRoom) {
     const slug = slugify(queryRoom);
-    if (savedName) {
+    if (getSavedName()) {
       enterRoom(slug);
     } else {
       // prefill join tab and keep start visible for name
@@ -357,9 +376,8 @@ scrollDownBtn.addEventListener("click", () => scrollToBottom(true));
       joinRoomCode.value = slug;
       startName.focus();
     }
-  } else if (savedRoom && savedName) {
-    enterRoom(savedRoom);
   } else {
+    // no auto-enter; always show start screen
     startName.focus();
   }
 })();
