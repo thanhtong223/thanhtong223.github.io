@@ -49,7 +49,7 @@
     </div>
   </form>
 
-  <!-- Start screen -->
+  <!-- Start screen (overlay) -->
   <section id="startView" class="start">
     <div class="card">
       <h1>Start chatting</h1>
@@ -95,6 +95,7 @@
           </svg>
         </button>
       </header>
+
       <div class="drawer-body">
         <div class="section">
           <div class="label">Current room</div>
@@ -102,6 +103,14 @@
           <div class="row gap">
             <input id="inviteLink" class="mono input small" readonly />
             <button id="copyInvite" class="pill-btn small">Copy</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Room code (share this)</div>
+          <div class="row gap">
+            <input id="roomCodeField" class="mono input small" readonly />
+            <button id="copyCode" class="pill-btn small">Copy</button>
           </div>
         </div>
 
