@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Happy Birthday, My</title>
+
+<!-- favicon -->
+<link rel="icon" href="/leetcode_logo_icon_145113.png" type="image/png" />
+
+<!-- Inter font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    --text: #121212;
+    --muted: #4b4b4b;
+    --link: #1a73e8;
+    --accent: #c23b22;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.9;
+    color: var(--muted);
+    letter-spacing: -0.5px;
+    margin: 60px 0 80px 80px;
+    max-width: 540px;
+    text-align: left;
+  }
+
+  nav {
+    margin-bottom: 28px;
+  }
+  nav a {
+    margin-right: 16px;
+    color: var(--link);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  nav a:hover { text-decoration: underline; }
+  nav a.gf-link { color: var(--accent); }
+  nav {
+  margin-bottom: 28px;
+  display: flex;         /* arrange links in one row */
+  flex-wrap: nowrap;     /* prevent wrapping to next line */
+  overflow-x: auto;      /* allow horizontal scroll if it can't fit */
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+}
+nav a {
+  white-space: nowrap;   /* prevent individual links from breaking */
+}
+
+
+  h1 {
+    font-weight: 700;
+    font-size: 40px;
+    color: var(--text);
+    margin: 16px 0 28px;
+    letter-spacing: -1.2px;
+  }
+  h1 .my { color: var(--accent); }
+
+  p { margin: 18px 0; }
+
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+  }
+
+  /* Keep GIF at natural 1280×720 but responsive */
+  .alps-gif {
+    width: 1280px;   /* natural width */
+    height: auto;
+    max-width: 100%; /* shrink if column/screen is smaller */
+    display: block;
+    margin: 24px 0;
+  }
+
+  /* --- three-photo stack --- */
+  .photo-stack {
+    position: relative;
+    width: 100%;
+    max-width: 540px;
+    height: 400px;   /* adjust total stack height as needed */
+    margin: 24px 0;
+  }
+
+  .photo-stack .photo {
+    position: absolute;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  /* individual size + placement */
+  .photo.left {
+    width: 39%;  /* size of left photo */
+    left: 0;
+    top: 100px;
+    z-index: 1;
+  }
+  .photo.center {
+    width: 65%;  /* size of center photo */
+    left: 52%;
+    top: 0px;
+    transform: translateX(-50%);
+    z-index: -1;
+  }
+  .photo.right {
+    width: 35%;  /* size of right photo */
+    right: 0;
+    top: 60px;
+    z-index: 1;
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 768px) {
+    body {
+      margin: 40px 20px 60px 20px;
+      max-width: 100%;
+      font-size: 18px;
+    }
+    h1 { font-size: 32px; }
+    .photo-stack {
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .photo-stack .photo {
+      position: static;
+      width: 100%; /* each fills the width on mobile */
+      transform: none;
+    }
+    .alps-gif {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <nav>
+    <a href="/">home</a>
+    <a href="https://youtube.com/@vthanht" target="_blank" rel="noopener">my yt channel</a>
+    <a href="https://youtu.be/EqHf7UWo3fQ?si=ZM1JGZ1Ogpv8Mmht" target="_blank" rel="noopener">what i like</a>
+    <a href="/my" class="gf-link">for my gf</a>
+  </nav>
+
+  <h1>happy birthday, <span class="my">my</span></h1>
+
+  <p>congrats, you made it to your 22nd birthday!</p>
+
+  <p>i know it’s been a tough time lately, with a lot going on.</p>
+
+  <p>but i believe that you can push through it, and i’ll be here to support you no matter what. pls keep that in mind.</p>
+
+  <!-- Overlapping photo section -->
+  <div class="photo-stack">
+    <img src="france.JPG" alt="France wall" class="photo left">
+    <img src="alps1.jpg" alt="Alps" class="photo center">
+    <img src="paris.JPG" alt="Paris night" class="photo right">
+  </div>
+
+  <p>over the years we’ve been through ups and downs, and i wanna keep going through all of that with you in the future too.</p>
+
+  <!-- Animated GIF section -->
+  <img src="alps.gif" alt="us in the alps animated gif" class="alps-gif">
+
+  <p>i don’t really know what else to say but thank you for being here, and for letting me experience so many new things because of you.</p>
+
+  <p>so let’s just keep going, keep moving forward, together.</p>
+
+  <p>thank you for everything.</p>
+
+  <p>i love you, a lot.</p>
+
+  <p>and finally, happy birthday my xinh đẹp!</p>
+
+</body>
+</html>

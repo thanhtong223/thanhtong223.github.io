@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Chat</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://esm.sh/@supabase/supabase-js@2" defer></script>
+  <script type="module" src="./supabase-config.js" defer></script>
+  <script type="module" src="./main.js" defer></script>
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="bar">
+      <button id="menuBtn" class="icon-btn" aria-label="Menu" title="Menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="title" id="titleRoom">Chat</div>
+      <div class="spacer"></div>
+      <button id="themeBtn" class="pill-btn" title="Toggle theme">Light</button>
+    </div>
+  </header>
+
+  <!-- Chat view -->
+  <main id="chatView" class="chat hidden" aria-live="polite">
+    <div id="log" class="log"></div>
+    <button id="scrollDownBtn" class="scroll-down hidden" title="Scroll to latest">↓ New messages</button>
+  </main>
+
+  <!-- Composer -->
+  <form id="composer" class="composer hidden" autocomplete="off">
+    <div class="composer-row">
+      <button type="button" id="profileBtn" class="icon-btn" title="Set your name">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM4 20a8 8 0 1 1 16 0v1H4v-1Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <textarea id="content" class="input" placeholder="Write a message" rows="1"></textarea>
+
+      <button id="sendBtn" class="send-btn" title="Send" type="submit" aria-label="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3.4 20.6 22 12 3.4 3.4 3 10l11 2-11 2z"/>
+        </svg>
+      </button>
+    </div>
+  </form>
+
+  <!-- Start screen (overlay) -->
+  <section id="startView" class="start">
+    <div class="card">
+      <h1>Start chatting</h1>
+
+      <label class="field">
+        <span>Your name</span>
+        <input id="startName" placeholder="e.g., Thanh" />
+      </label>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="create">Create room</button>
+        <button class="tab" data-tab="join">Join room</button>
+      </div>
+
+      <div id="tab-create" class="tabpane">
+        <label class="field">
+          <span>Room name</span>
+          <input id="newRoomName" placeholder="e.g., team-alpha" />
+        </label>
+        <button id="createRoomBtn" class="primary">Create</button>
+        <p class="hint">A share link will be generated.</p>
+      </div>
+
+      <div id="tab-join" class="tabpane hidden">
+        <label class="field">
+          <span>Room code or name</span>
+          <input id="joinRoomCode" placeholder="e.g., team-alpha or code" />
+        </label>
+        <button id="joinRoomBtn" class="primary">Join</button>
+        <p class="hint">You can also open a link like <code>?room=team-alpha</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Drawer -->
+  <aside id="drawer" class="drawer">
+    <div class="drawer-sheet">
+      <header class="drawer-head">
+        <div class="drawer-title">Room actions</div>
+        <button id="drawerClose" class="icon-btn" aria-label="Close">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+        <div class="section">
+          <div class="label">Current room</div>
+          <div class="mono" id="drawerRoomId">—</div>
+          <div class="row gap">
+            <input id="inviteLink" class="mono input small" readonly />
+            <button id="copyInvite" class="pill-btn small">Copy</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Room code (share this)</div>
+          <div class="row gap">
+            <input id="roomCodeField" class="mono input small" readonly />
+            <button id="copyCode" class="pill-btn small">Copy</button>
+          </div>
+        </div>
+
+        <hr/>
+
+        <div class="section">
+          <div class="label">Create new room</div>
+          <div class="row gap">
+            <input id="drawerNewRoom" class="input small" placeholder="room name" />
+            <button id="drawerCreate" class="pill-btn small">Create</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="label">Join by code or name</div>
+          <div class="row gap">
+            <input id="drawerJoinCode" class="input small" placeholder="enter code or name" />
+            <button id="drawerJoin" class="pill-btn small">Join</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="drawerBackdrop" class="drawer-backdrop"></div>
+  </aside>
+
+  <!-- Name modal -->
+  <dialog id="nameModal" class="modal">
+    <form method="dialog" class="modal-sheet" id="nameForm">
+      <h3>Set your name</h3>
+      <input id="author" class="input" placeholder="Your name" />
+      <div class="row end">
+        <button value="cancel" class="pill-btn">Cancel</button>
+        <button id="saveNameBtn" value="default" class="primary">Apply</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
